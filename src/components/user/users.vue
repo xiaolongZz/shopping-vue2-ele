@@ -205,10 +205,22 @@ export default {
       rolesList: [],
       // 已选择的角色Id值
       selectedRoleId: '',
+      // 定时器
+      timer: null,
+      // 标志位
+      flag: 0,
     }
   },
   created() {
     this.getUserList()
+    this.timer = setInterval(() => {
+      if (this.flag < 5) {
+        this.flag += 1
+        this.getUserList()
+      } else {
+        clearInterval(this.timer)
+      }
+    }, 1000)
   },
   methods: {
     async getUserList() {
@@ -235,9 +247,7 @@ export default {
     // 监听 switch开关状态变化
     async userStateChanged(userinfo) {
       //   console.log(userinfo)
-      const { data: res } = await this.$http.put(
-        `users/${userinfo.id}/state/${userinfo.mg_state}`
-      )
+      const { data: res } = await this.$http.put(`users/${userinfo.id}/state/${userinfo.mg_state}`)
       if (res.meta.status !== 200) {
         userinfo.mg_state = !userinfo.mg_state
         return this.$message.error('更新状态失败！')
@@ -284,10 +294,7 @@ export default {
         // console.log(valid)
         if (!valid) return
         // 发起修改用户信息的请求
-        const { data: res } = await this.$http.put(
-          'users/' + this.editForm.id,
-          { email: this.editForm.email, mobile: this.editForm.mobile }
-        )
+        const { data: res } = await this.$http.put('users/' + this.editForm.id, { email: this.editForm.email, mobile: this.editForm.mobile })
         if (res.meta.status !== 200) {
           return $message.error('更新用户信息失败！')
         }
@@ -302,15 +309,11 @@ export default {
     // 根据id删除对应的用户信息
     async removeUserById(id) {
       // 询问用户是否删除数据
-      const confirmResult = await this.$confirm(
-        '此操作将永久删除用户, 是否继续?',
-        '提示',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning',
-        }
-      ).catch((err) => err)
+      const confirmResult = await this.$confirm('此操作将永久删除用户, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }).catch((err) => err)
       // 如果用户确认删除  则返回值为字符串 confirm
       // 如果用户取消了删除  则返回值为字符串 cancel
       // console.log(confirmResult)
@@ -341,12 +344,9 @@ export default {
       if (!this.selectedRoleId) {
         return this.$message.error('请选择要分配的角色！')
       }
-      const { data: res } = await this.$http.put(
-        `users/${this.userInfo.id}/role`,
-        {
-          rid: this.selectedRoleId,
-        }
-      )
+      const { data: res } = await this.$http.put(`users/${this.userInfo.id}/role`, {
+        rid: this.selectedRoleId,
+      })
       if (res.meta.status !== 200) {
         return this.$message.error('分配角色失败！')
       }
@@ -359,6 +359,10 @@ export default {
       this.selectedRoleId = ''
       this.userInfo = {}
     },
+  },
+  beforeDestroy() {
+    clearInterval(this.timer)
+    this.timer = null
   },
 }
 </script>
